@@ -21,7 +21,19 @@ func main() {
 		Use:   "new",
 		Short: "Create a new .wkn database file and start the REPL",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("Creating new .wkn database...")
+			if dbExists(".wkn") {
+				fmt.Printf(".wkn file already exists")
+				return
+			} else {
+				file, err := os.Create(".wkn")
+				if err != nil {
+					fmt.Println("Error creating a file: ", err)
+					return
+				}
+				defer file.Close()
+
+				fmt.Println("Created .wkn file")
+			}
 		},
 	}
 
@@ -31,4 +43,12 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+}
+
+func dbExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
 }
