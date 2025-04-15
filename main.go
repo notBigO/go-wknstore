@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -27,8 +28,13 @@ func main() {
 		Short: "Create a new .wkn database file and start the REPL",
 		Run: func(cmd *cobra.Command, args []string) {
 			if dbExists(".wkn") {
-				fmt.Printf(".wkn file already exists")
-				return
+				data, err := os.ReadFile(".wkn")
+				if err == nil {
+					fmt.Println(".wkn file already exists. Loading...")
+					json.Unmarshal(data, &arrays)
+				} else {
+					fmt.Println("Failed to read .wkn file:", err)
+				}
 			} else {
 				file, err := os.Create(".wkn")
 				if err != nil {
@@ -36,10 +42,10 @@ func main() {
 					return
 				}
 				defer file.Close()
-
 				fmt.Println("Created .wkn file")
-				replLoop()
 			}
+
+			replLoop()
 		},
 	}
 
@@ -100,6 +106,19 @@ func replLoop() {
 			}
 
 			arrays[name] = nums
+
+			data, err := json.Marshal(arrays)
+			if err != nil {
+				fmt.Println("Failed to encode data:", err)
+				break
+			}
+
+			err = os.WriteFile(".wkn", data, 0644)
+			if err != nil {
+				fmt.Println("Failed to write to .wkn:", err)
+				break
+			}
+
 			fmt.Printf("Created array '%s' with values: %v\n", name, nums)
 
 		case "show":
