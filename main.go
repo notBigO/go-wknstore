@@ -71,6 +71,14 @@ func parse(input string) (string, []string) {
 	return parts[0], parts[1:]
 }
 
+func saveToFile() error {
+	data, err := json.Marshal(arrays)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(".wkn", data, 0644)
+}
+
 func replLoop() {
 	for {
 		print("wkn> ")
@@ -81,6 +89,7 @@ func replLoop() {
 		case "exit":
 			fmt.Println("Bye!")
 			return
+
 		case "new":
 			if len(args) < 1 {
 				fmt.Println("Usage: new <array_name> [num1 num2 ...]")
@@ -95,11 +104,9 @@ func replLoop() {
 
 			nums := []int{}
 			for _, arg := range args[1:] {
-
 				num, err := strconv.Atoi(arg)
-
 				if err != nil {
-					fmt.Printf("Invalid number: %s\n", arg)
+					fmt.Printf("Error: Invalid number: %s\n", arg)
 					continue
 				}
 				nums = append(nums, num)
@@ -107,19 +114,12 @@ func replLoop() {
 
 			arrays[name] = nums
 
-			data, err := json.Marshal(arrays)
-			if err != nil {
-				fmt.Println("Failed to encode data:", err)
+			if err := saveToFile(); err != nil {
+				fmt.Println("Error: Failed to save to .wkn:", err)
 				break
 			}
 
-			err = os.WriteFile(".wkn", data, 0644)
-			if err != nil {
-				fmt.Println("Failed to write to .wkn:", err)
-				break
-			}
-
-			fmt.Printf("Created array '%s' with values: %v\n", name, nums)
+			fmt.Printf("CREATED (%d)\n", len(nums))
 
 		case "show":
 			if len(arrays) == 0 {
@@ -132,7 +132,7 @@ func replLoop() {
 				if arr, ok := arrays[name]; ok {
 					fmt.Printf("%s: %v\n", name, arr)
 				} else {
-					fmt.Printf("Array '%s' not found\n", name)
+					fmt.Printf("Error: Array '%s' not found\n", name)
 				}
 				break
 			}
@@ -140,6 +140,27 @@ func replLoop() {
 			for name, data := range arrays {
 				fmt.Printf("%s: %v\n", name, data)
 			}
+
+		case "del":
+			if len(args) < 1 {
+				fmt.Println("Usage: del <array_name>")
+				break
+			}
+
+			_, exists := arrays[args[0]]
+			if !exists {
+				fmt.Printf("Error: Array '%s' does not exist\n", args[0])
+				break
+			}
+
+			delete(arrays, args[0])
+
+			if err := saveToFile(); err != nil {
+				fmt.Println("Error: Failed to save to .wkn:", err)
+				break
+			}
+
+			fmt.Printf("DELETED")
 
 		default:
 			fmt.Printf("Error: “%s” is not a supported operation\n", cmd)
