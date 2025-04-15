@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -33,6 +35,7 @@ func main() {
 				defer file.Close()
 
 				fmt.Println("Created .wkn file")
+				replLoop()
 			}
 		},
 	}
@@ -42,6 +45,40 @@ func main() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
+	}
+}
+
+func readLine() string {
+	reader := bufio.NewReader(os.Stdin)
+	line, _ := reader.ReadString('\n')
+	return strings.TrimSpace(line)
+}
+
+func parse(input string) (string, []string) {
+	parts := strings.Fields(input)
+	if len(parts) == 0 {
+		return "", nil
+	}
+	return parts[0], parts[1:]
+}
+
+func replLoop() {
+	for {
+		print("wkn> ")
+		input := readLine()
+		cmd, args := parse(input)
+
+		switch cmd {
+		case "exit":
+			fmt.Println("Bye!")
+			return
+		case "new":
+			fmt.Println("Creating a new array.....")
+		case "show":
+			fmt.Println("Showing all arrays....")
+		default:
+			fmt.Printf("Error: “%s” is not a supported operation\n", cmd)
+		}
 	}
 }
 
