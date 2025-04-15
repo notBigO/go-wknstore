@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -76,21 +77,44 @@ func replLoop() {
 			return
 		case "new":
 			if len(args) < 1 {
-				fmt.Println("Usage: new <array_name>")
+				fmt.Println("Usage: new <array_name> [num1 num2 ...]")
 				break
 			}
 
 			name := args[0]
 			if _, exists := arrays[name]; exists {
 				fmt.Printf("Array '%s' already exists\n", name)
-			} else {
-				arrays[name] = []int{}
-				fmt.Printf("Created array '%s'\n", name)
+				break
 			}
+
+			nums := []int{}
+			for _, arg := range args[1:] {
+
+				num, err := strconv.Atoi(arg)
+
+				if err != nil {
+					fmt.Printf("Invalid number: %s\n", arg)
+					continue
+				}
+				nums = append(nums, num)
+			}
+
+			arrays[name] = nums
+			fmt.Printf("Created array '%s' with values: %v\n", name, nums)
 
 		case "show":
 			if len(arrays) == 0 {
 				fmt.Println("No arrays present")
+				break
+			}
+
+			if len(args) == 1 {
+				name := args[0]
+				if arr, ok := arrays[name]; ok {
+					fmt.Printf("%s: %v\n", name, arr)
+				} else {
+					fmt.Printf("Array '%s' not found\n", name)
+				}
 				break
 			}
 
