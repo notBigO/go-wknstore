@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var arrays = make(map[string][]int)
+
 func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "wkn",
@@ -73,9 +75,29 @@ func replLoop() {
 			fmt.Println("Bye!")
 			return
 		case "new":
-			fmt.Println("Creating a new array.....")
+			if len(args) < 1 {
+				fmt.Println("Usage: new <array_name>")
+				break
+			}
+
+			name := args[0]
+			if _, exists := arrays[name]; exists {
+				fmt.Printf("Array '%s' already exists\n", name)
+			} else {
+				arrays[name] = []int{}
+				fmt.Printf("Created array '%s'\n", name)
+			}
+
 		case "show":
-			fmt.Println("Showing all arrays....")
+			if len(arrays) == 0 {
+				fmt.Println("No arrays present")
+				break
+			}
+
+			for name, data := range arrays {
+				fmt.Printf("%s: %v\n", name, data)
+			}
+
 		default:
 			fmt.Printf("Error: “%s” is not a supported operation\n", cmd)
 		}
