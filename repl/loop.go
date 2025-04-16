@@ -13,6 +13,17 @@ func ReplLoop(arrays map[string][]int) {
 		input := utils.ReadLine()
 		cmd, args := utils.Parse(input)
 
+		// for commands that need fresh data  reload from file first
+		if cmd == "show" || cmd == "new" || cmd == "merge" || cmd == "pow" || cmd == "del" {
+			freshArrays, err := utils.LoadFromFile()
+			if err == nil {
+				// update the arrays map with fresh data
+				arrays = freshArrays
+			} else {
+				fmt.Println("Error refreshing data:", err)
+			}
+		}
+
 		switch cmd {
 		case "exit":
 			fmt.Println("Bye!")
@@ -58,7 +69,7 @@ func ReplLoop(arrays map[string][]int) {
 			if len(args) == 1 {
 				name := args[0]
 				if arr, ok := arrays[name]; ok {
-					fmt.Printf("%s: %v\n", name, arr)
+					fmt.Println(arr)
 				} else {
 					fmt.Printf("Error: '%s' does not exist\n", name)
 				}
@@ -79,11 +90,11 @@ func ReplLoop(arrays map[string][]int) {
 			sArr, ok2 := arrays[source]
 
 			if !ok1 {
-				fmt.Printf("Error: “%s” does not exist\n", target)
+				fmt.Printf("Error: %s does not exist\n", target)
 				break
 			}
 			if !ok2 {
-				fmt.Printf("Error: “%s” does not exist\n", source)
+				fmt.Printf("Error: %s does not exist\n", source)
 				break
 			}
 
@@ -121,7 +132,7 @@ func ReplLoop(arrays map[string][]int) {
 
 			_, exists := arrays[args[0]]
 			if !exists {
-				fmt.Printf("Error:  “%s” does not exist\n", args[0])
+				fmt.Printf("Error: %s does not exist\n", args[0])
 				break
 			}
 
@@ -135,7 +146,7 @@ func ReplLoop(arrays map[string][]int) {
 			fmt.Println("DELETED")
 
 		default:
-			fmt.Printf("Error: “%s” is not a supported operation\n", cmd)
+			fmt.Printf("Error: %s is not a supported operation\n", cmd)
 		}
 	}
 }

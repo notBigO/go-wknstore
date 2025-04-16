@@ -8,6 +8,14 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
+)
+
+const (
+	dbFile     = ".wkn"
+	lockFile   = ".wkn.lock"
+	maxRetries = 5
+	retryDelay = 200 * time.Millisecond
 )
 
 func ReadLine() string {
@@ -24,12 +32,74 @@ func Parse(input string) (string, []string) {
 	return parts[0], parts[1:]
 }
 
+// tryigg to create a lock file
+func acquireLock() error {
+	for i := 0; i < maxRetries; i++ {
+		file, err := os.OpenFile(lockFile, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
+		if err == nil {
+			file.Close()
+			return nil
+		}
+
+		// check if file exists error (lock is held by someone else)
+		if os.IsExist(err) {
+			// wait and retry
+			time.Sleep(retryDelay)
+			continue
+		}
+
+		return err
+	}
+
+	return fmt.Errorf("failed to acquire lock after %d attempts", maxRetries)
+}
+
+// remove the lock file
+func releaseLock() error {
+	return os.Remove(lockFile)
+}
+
+// load arrays from the database file with locking
+func LoadFromFile() (map[string][]int, error) {
+	if err := acquireLock(); err != nil {
+		return nil, fmt.Errorf("couldn't acquire lock: %v", err)
+	}
+	defer releaseLock()
+
+	data, err := os.ReadFile(dbFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// if the file doesn't exist, return an empty map
+			return make(map[string][]int), nil
+		}
+		return nil, err
+	}
+
+	// empty fiile case
+	if len(data) == 0 {
+		return make(map[string][]int), nil
+	}
+
+	var arrays map[string][]int
+	if err := json.Unmarshal(data, &arrays); err != nil {
+		return make(map[string][]int), nil
+	}
+
+	return arrays, nil
+}
+
+// save arrays to the database file with locking
 func SaveToFile(arrays map[string][]int) error {
+	if err := acquireLock(); err != nil {
+		return fmt.Errorf("couldn't acquire lock: %v", err)
+	}
+	defer releaseLock()
+
 	data, err := json.Marshal(arrays)
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(".wkn", data, 0644)
+	return os.WriteFile(dbFile, data, 0644)
 }
 
 func DbExists(filename string) bool {
@@ -52,10 +122,10 @@ func GetValueFromReference(ref string, arrays map[string][]int) (int, error) {
 	}
 	arr, ok := arrays[name]
 	if !ok {
-		return 0, fmt.Errorf("“%s” does not exist", name)
+		return 0, fmt.Errorf("%s does not exist", name)
 	}
 	if idx < 0 || idx >= len(arr) {
-		return 0, fmt.Errorf("“%s” index out of bounds for %d", name, idx)
+		return 0, fmt.Errorf("%s index out of bounds for %d", name, idx)
 	}
 	return arr[idx], nil
 }

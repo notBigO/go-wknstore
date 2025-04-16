@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -9,8 +8,6 @@ import (
 	"github.com/notBigO/wkn/utils"
 	"github.com/spf13/cobra"
 )
-
-var arrays = make(map[string][]int)
 
 func main() {
 	var rootCmd = &cobra.Command{
@@ -26,22 +23,10 @@ func main() {
 		Use:   "new",
 		Short: "Create a new .wkn database file and start the REPL",
 		Run: func(cmd *cobra.Command, args []string) {
-			if utils.DbExists(".wkn") {
-				data, err := os.ReadFile(".wkn")
-				if err == nil {
-					fmt.Println(".wkn file already exists. Loading...")
-					json.Unmarshal(data, &arrays)
-				} else {
-					fmt.Println("Failed to read .wkn file:", err)
-				}
-			} else {
-				file, err := os.Create(".wkn")
-				if err != nil {
-					fmt.Println("Error creating a file: ", err)
-					return
-				}
-				defer file.Close()
-				fmt.Println("Created .wkn file")
+			arrays, err := utils.LoadFromFile()
+			if err != nil {
+				fmt.Println("Error loading database:", err)
+				return
 			}
 
 			repl.ReplLoop(arrays)
