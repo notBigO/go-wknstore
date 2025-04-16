@@ -13,8 +13,8 @@ import (
 
 const (
 	dbFile     = ".wkn"
-	lockFile   = ".wkn.lock"
-	maxRetries = 5
+	lockFile   = ".wkn.lock" // well use this for concurrency control
+	maxRetries = 5           // tries to attempt to acquire lock
 	retryDelay = 200 * time.Millisecond
 )
 
@@ -24,6 +24,7 @@ func ReadLine() string {
 	return strings.TrimSpace(line)
 }
 
+// splittingg commands and arguments
 func Parse(input string) (string, []string) {
 	parts := strings.Fields(input)
 	if len(parts) == 0 {
@@ -110,6 +111,7 @@ func DbExists(filename string) bool {
 	return !info.IsDir()
 }
 
+// parse strings like arr1.X arr1.Y, etc
 func GetValueFromReference(ref string, arrays map[string][]int) (int, error) {
 	parts := strings.Split(ref, ".")
 	if len(parts) != 2 {
