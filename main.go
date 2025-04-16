@@ -160,7 +160,7 @@ func replLoop() {
 				break
 			}
 
-			fmt.Printf("DELETED")
+			fmt.Println("DELETED")
 
 		default:
 			fmt.Printf("Error: “%s” is not a supported operation\n", cmd)
