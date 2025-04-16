@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -132,7 +133,7 @@ func replLoop() {
 				if arr, ok := arrays[name]; ok {
 					fmt.Printf("%s: %v\n", name, arr)
 				} else {
-					fmt.Printf("Error: Array '%s' not found\n", name)
+					fmt.Printf("Error: '%s' does not exist\n", name)
 				}
 				break
 			}
@@ -140,6 +141,50 @@ func replLoop() {
 			for name, data := range arrays {
 				fmt.Printf("%s: %v\n", name, data)
 			}
+
+		case "merge":
+			if len(args) < 2 {
+				fmt.Println("Usage: merge <target_array> <source_array>")
+				break
+			}
+			target, source := args[0], args[1]
+			tArr, ok1 := arrays[target]
+			sArr, ok2 := arrays[source]
+
+			if !ok1 {
+				fmt.Printf("Error: “%s” does not exist\n", target)
+				break
+			}
+			if !ok2 {
+				fmt.Printf("Error: “%s” does not exist\n", source)
+				break
+			}
+
+			arrays[target] = append(tArr, sArr...)
+			if err := saveToFile(); err != nil {
+				fmt.Println("Error: Failed to save to .wkn:", err)
+				break
+			}
+			fmt.Println("MERGED")
+
+		case "pow":
+			if len(args) < 2 {
+				fmt.Println("Usage: pow <arrayA.indexA> <arrayB.indexB>")
+				break
+			}
+			base, err1 := getValueFromReference(args[0])
+			exp, err2 := getValueFromReference(args[1])
+
+			if err1 != nil {
+				fmt.Println("Error:", err1)
+				break
+			}
+			if err2 != nil {
+				fmt.Println("Error:", err2)
+				break
+			}
+
+			fmt.Println(binaryExponentiation(base, exp))
 
 		case "del":
 			if len(args) < 1 {
@@ -149,7 +194,7 @@ func replLoop() {
 
 			_, exists := arrays[args[0]]
 			if !exists {
-				fmt.Printf("Error: Array '%s' does not exist\n", args[0])
+				fmt.Printf("Error:  “%s” does not exist\n", args[0])
 				break
 			}
 
@@ -174,4 +219,38 @@ func dbExists(filename string) bool {
 		return false
 	}
 	return !info.IsDir()
+}
+
+func getValueFromReference(ref string) (int, error) {
+	parts := strings.Split(ref, ".")
+	if len(parts) != 2 {
+		return 0, errors.New("Invalid format, expected array.index")
+	}
+	name := parts[0]
+	idx, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return 0, errors.New("Invalid index")
+	}
+	arr, ok := arrays[name]
+	if !ok {
+		return 0, fmt.Errorf("“%s” does not exist", name)
+	}
+	if idx < 0 || idx >= len(arr) {
+		return 0, fmt.Errorf("“%s” index out of bounds for %d", name, idx)
+	}
+	return arr[idx], nil
+}
+
+func binaryExponentiation(base, exp int) int {
+	result := 1
+	mod := int(1e9 + 7)
+	base %= mod
+	for exp > 0 {
+		if exp%2 == 1 {
+			result = (result * base) % mod
+		}
+		base = (base * base) % mod
+		exp /= 2
+	}
+	return result
 }
