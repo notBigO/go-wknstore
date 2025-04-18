@@ -145,3 +145,26 @@ func BinaryExponentiation(base, exp int) int {
 	}
 	return result
 }
+
+// load arrays from a specified database file
+func LoadFromSpecificFile(path string) (map[string][]int, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, errors.New("file does not exist")
+		}
+		return nil, err
+	}
+
+	// Check if file is empty
+	if len(data) == 0 {
+		return make(map[string][]int), nil
+	}
+
+	var arrays map[string][]int
+	if err := json.Unmarshal(data, &arrays); err != nil {
+		return nil, errors.New("file is corrupted")
+	}
+
+	return arrays, nil
+}

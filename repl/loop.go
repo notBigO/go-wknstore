@@ -31,7 +31,7 @@ func ReplLoop(arrays map[string][]int) {
 
 		case "new":
 			if len(args) < 1 {
-				fmt.Println("Usage: new <array_name> [num1 num2 ...]")
+				fmt.Println("Usage: new <array_name> num1 num2 ...")
 				break
 			}
 
@@ -42,13 +42,21 @@ func ReplLoop(arrays map[string][]int) {
 			}
 
 			nums := []int{}
+			validInput := true
+
 			for _, arg := range args[1:] {
 				num, err := strconv.Atoi(arg)
 				if err != nil {
 					fmt.Printf("Error: Invalid number: %s\n", arg)
-					continue
+					validInput = false
+					break
 				}
 				nums = append(nums, num)
+			}
+
+			// this will fix the wreong input creation
+			if !validInput {
+				break
 			}
 
 			arrays[name] = nums
